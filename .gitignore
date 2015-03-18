@@ -1,0 +1,12 @@
+*.egg-info
+*.pyc
+*.swp
+.coverage
+.tox/
+MANIFEST
+build/
+dist/
+.build
+._*
+.DS_Store
+scdev.key
