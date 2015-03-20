@@ -22,6 +22,8 @@ from __future__ import unicode_literals
 import os
 import json
 import logging
+import datetime
+
 import requests
 
 import database
@@ -75,7 +77,8 @@ def run():
             lc=station['lc'],
             br=station['br'],
             mt=station['mt'],
-            genre=station['genre'])
+            genre=station['genre'],
+            ts=datetime.datetime.now())
 
         station_dbinstance.save()
 

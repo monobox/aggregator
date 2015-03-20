@@ -34,6 +34,7 @@ class ShoutcastStation(peewee.Model):
     br = peewee.IntegerField()
     mt = peewee.TextField()
     genre = peewee.TextField()
+    ts = peewee.DateTimeField()
 
     class Meta:
         database = db
