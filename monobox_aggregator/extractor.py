@@ -19,13 +19,18 @@
 
 from __future__ import unicode_literals
 
+import random
+
 import database
 import config
 
-def get_urls():
-    db = database.FileDatabase(config.inst.get('aggregator', 'database_file'))
-    
-    urls = ['%s?id=%s' % (db['shoutcast']['tune_url'], sid)
-            for sid in db['shoutcast']['station_ids']]
+SC_TUNE_URL='http://yp.shoutcast.com/sbin/tunein-station.pls'
 
-    return urls
+def get_urls():
+    urls = []
+    for station in database.ShoutcastStation.select():
+        urls.append('%s?id=%s' % (SC_TUNE_URL, station.scid))
+
+    random.shuffle(urls)
+
+    return urls[0:config.inst.getint('aggregator', 'urls_per_request')]

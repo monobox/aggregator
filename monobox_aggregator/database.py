@@ -20,29 +20,28 @@
 from __future__ import unicode_literals
 
 import os
-import json
+import peewee
 import logging
 
 logger = logging.getLogger(__name__)
 
-class FileDatabase(object):
-    def __init__(self, filename):
-        logger.info('Opening db %s' % filename)
-        self.filename = filename
-        if os.path.exists(filename):
-            self.data = json.load(open(filename))
-        else:
-            logger.warning('Initializing a new db')
-            self.data = {}
+db = peewee.SqliteDatabase(None)
 
-    def __setitem__(self, key, value):
-        self.data[key] = value
+class ShoutcastStation(peewee.Model):
+    scid = peewee.IntegerField(unique=True)
+    name = peewee.TextField()
+    lc = peewee.IntegerField()
+    br = peewee.IntegerField()
+    mt = peewee.TextField()
+    genre = peewee.TextField()
 
-    def __getitem__(self, key):
-        return self.data.get(key, None)
+    class Meta:
+        database = db
 
-    def commit(self):
-        json.dump(self.data, open(self.filename, 'w'))
+def init(filename):
+    logger.info('Opening db %s' % filename)
+    db.init(filename)
+    db.create_tables([ShoutcastStation], safe=True)
 
 if __name__ == '__main__':
     db = FileDatabase('db.json')

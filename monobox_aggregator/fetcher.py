@@ -30,46 +30,54 @@ import config
 logger = logging.getLogger(__name__)
 
 SC_RANDOM_URL='http://api.shoutcast.com/station/randomstations'
-DEV_KEY=open(os.path.join(os.path.dirname(__file__), 'scdev.key')).read().strip()
 
 class ShoutcastProvider(object):
     def __init__(self):
-        pass
+        sc_file = config.inst.get('aggregator', 'shoutcast_keyfile')
+        if not os.path.isfile(sc_file):
+            raise RuntimeError('ERROR: SC key file %s not found' % sc_file)
+        self.sc_key = open(sc_file).read().strip()
 
-    def random_request(self, additional_params={}):
-        return self.request(SC_RANDOM_URL, additional_params)
-
-    def local_request(self, filename):
-        return json.load(open(filename))
+    def get_random_stations(self, additional_params={}):
+        data = self.request(SC_RANDOM_URL, additional_params)
+        if data['response']['statusCode'] == 200:
+            return data['response']['data']['stationlist']['station']
 
     def request(self, url, additional_params):
-        params = {'k': DEV_KEY, 'f': 'json'}
+        params = {'k': self.sc_key, 'f': 'json'}
         params.update(additional_params)
         r = requests.get(url, params=params)
 
         return r.json()
 
-class ShoutcastProcessor(object):
-    def extract_station_ids(self, data):
-        station_ids = list(set([station['id']
-                for station in data['response']['data']['stationlist']['station']]))
-
-        return station_ids
-
 def run():
     logging.basicConfig(level=logging.INFO)
     logger.info('Monobox fetcher starting up')
 
+    config.init()
+    database.init(config.inst.get('aggregator', 'database_file'))
+
     sc = ShoutcastProvider()
-    sp = ShoutcastProcessor()
-    db = database.FileDatabase(config.get('aggregator', 'database_file'))
 
-    # station_ids = sp.extract_station_ids(sc.local_request('../tools/stations.json'))
-    station_ids = sp.extract_station_ids(sc.random_request())
+    stations = sc.get_random_stations()
+    for station in stations:
+        try:
+            old_entry = database.ShoutcastStation.select().where(
+                    database.ShoutcastStation.scid==station['id']).get()
+        except database.ShoutcastStation.DoesNotExist:
+            pass
+        else:
+            old_entry.delete_instance()
 
-    db['shoutcast'] = {'station_ids': station_ids,
-            'tune_url': 'http://yp.shoutcast.com/sbin/tunein-station.pls'}
-    db.commit()
+        station_dbinstance = database.ShoutcastStation.create(
+            scid=station['id'],
+            name=station['name'],
+            lc=station['lc'],
+            br=station['br'],
+            mt=station['mt'],
+            genre=station['genre'])
+
+        station_dbinstance.save()
 
 if __name__ == '__main__':
     run()

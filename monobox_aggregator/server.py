@@ -22,6 +22,7 @@ import logging
 import cgi
 from flask import Flask, render_template, jsonify, request
 
+import database
 import extractor
 import config
 
@@ -37,11 +38,12 @@ def main():
 
 def run():
     logging.basicConfig(level=logging.INFO)
-    config.init()
-
     logger.info('Monobox aggregator server starting up')
-    app.run(debug=config.inst.getboolean('aggregator', 'debug'),
-            host=config.inst.get('aggregator', 'listen_address'),
+
+    config.init()
+    database.init(config.inst.get('aggregator', 'database_file'))
+
+    app.run(host=config.inst.get('aggregator', 'listen_address'),
             port=config.inst.getint('aggregator', 'listen_port'))
 
 if __name__ == '__main__':
