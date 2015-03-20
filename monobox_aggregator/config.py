@@ -19,18 +19,25 @@
 
 from __future__ import unicode_literals
 
+import sys
 import argparse
 import ConfigParser
 
-inst = None
+_inst = None
 
-def init():
-    global inst
+def init(config_file=None):
+    global _inst
 
-    parser = argparse.ArgumentParser(description='monobox aggregator')
-    parser.add_argument('config', help='configuration file')
+    if config_file is None:
+        parser = argparse.ArgumentParser(description='monobox aggregator')
+        parser.add_argument('config', help='configuration file')
 
-    args = parser.parse_args()
+        args = parser.parse_args()
+        config_file = args.config
 
-    inst = ConfigParser.ConfigParser()
-    inst.read(args.config)
+    _inst = ConfigParser.ConfigParser()
+    _inst.read(config_file)
+
+    me = sys.modules[__name__]
+    for meth in ['get', 'getint', 'getfloat', 'getboolean']:
+        setattr(me, meth, getattr(_inst, meth))
