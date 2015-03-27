@@ -20,7 +20,7 @@
 from __future__ import unicode_literals
 
 import os
-import json
+import xml.dom.minidom
 import logging
 import datetime
 
@@ -31,8 +31,6 @@ import config
 
 logger = logging.getLogger(__name__)
 
-SC_RANDOM_URL='http://api.shoutcast.com/station/randomstations'
-
 class ShoutcastProvider(object):
     def __init__(self):
         sc_file = config.get('fetcher', 'shoutcast_keyfile')
@@ -40,17 +38,51 @@ class ShoutcastProvider(object):
             raise RuntimeError('ERROR: SC key file %s not found' % sc_file)
         self.sc_key = open(sc_file).read().strip()
 
-    def get_random_stations(self, additional_params={}):
-        data = self.request(SC_RANDOM_URL, additional_params)
-        if data['response']['statusCode'] == 200:
-            return data['response']['data']['stationlist']['station']
+    def get_stations(self, url, additional_params={}):
+        data = self.request(url, additional_params)
+        if data:
+            doc = xml.dom.minidom.parseString(data.encode('utf-8'))
+            return doc.getElementsByTagName('station')
+        else:
+            return None
 
     def request(self, url, additional_params):
-        params = {'k': self.sc_key, 'f': 'json'}
+        params = {'k': self.sc_key, 'f': 'xml'}
         params.update(additional_params)
         r = requests.get(url, params=params)
 
-        return r.json()
+        if r.status_code == 200:
+            return r.text
+        else:
+            return None
+
+def merge_sc_stations(url):
+    logger.info('Merging shoutcast stations from URL %s' % url)
+    sc = ShoutcastProvider()
+
+    stations = sc.get_stations(url)
+    for station in stations:
+        try:
+            old_entry = database.ShoutcastStation.select().where(
+                    database.ShoutcastStation.scid==station.getAttribute('id')).get()
+        except database.ShoutcastStation.DoesNotExist:
+            pass
+        else:
+            old_entry.delete_instance()
+
+        station_dbinstance = database.ShoutcastStation.create(
+            scid=station.getAttribute('id'),
+            name=station.getAttribute('name'),
+            lc=station.getAttribute('lc'),
+            br=station.getAttribute('br'),
+            mt=station.getAttribute('mt'),
+            genre=station.getAttribute('genre'),
+            ts=datetime.datetime.now())
+
+        station_dbinstance.save()
+
+    logger.info('Fetched %d stations, %d total' % (len(stations),
+            database.ShoutcastStation.select().count()))
 
 def run():
     logging.basicConfig(level=logging.INFO)
@@ -59,31 +91,9 @@ def run():
     config.init()
     database.init(config.get('common', 'database_file'))
 
-    sc = ShoutcastProvider()
-
-    stations = sc.get_random_stations()
-    for station in stations:
-        try:
-            old_entry = database.ShoutcastStation.select().where(
-                    database.ShoutcastStation.scid==station['id']).get()
-        except database.ShoutcastStation.DoesNotExist:
-            pass
-        else:
-            old_entry.delete_instance()
-
-        station_dbinstance = database.ShoutcastStation.create(
-            scid=station['id'],
-            name=station['name'],
-            lc=station['lc'],
-            br=station['br'],
-            mt=station['mt'],
-            genre=station['genre'],
-            ts=datetime.datetime.now())
-
-        station_dbinstance.save()
-
-    logger.info('Fetched %d stations, %d total' % (len(stations),
-            database.ShoutcastStation.select().count()))
+    urls = config.get('fetcher', 'sc_urls').split(' ')
+    for url in urls:
+        merge_sc_stations(url)
 
 if __name__ == '__main__':
     run()
