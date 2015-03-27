@@ -38,7 +38,7 @@ def main():
     return jsonify({'urls': urls})
 
 def init(config_file=None):
-    utils.init_logger()
+    utils.init_logging()
     logger.info('Monobox aggregator server starting up')
 
     config.init(config_file)
