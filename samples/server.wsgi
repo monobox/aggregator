@@ -19,17 +19,15 @@
 
 from __future__ import unicode_literals
 
-import os
+CONFIG_FILE = '/var/www/vhosts/monobox-api/aggregator.ini'
+VIRTUALENV_ACTIVATE = '/var/www/venvs/monobox/bin/activate_this.py'
+
+if VIRTUALENV_ACTIVATE:
+    execfile(VIRTUALENV_ACTIVATE, dict(__file__=VIRTUALENV_ACTIVATE))
+
+
 import monobox_aggregator.server
 
-if not 'MONOBOX_AGGREGATOR_CONFIG' in os.environ:
-    raise RuntimeError('Environment variable MONOBOX_AGGREGATOR_CONFIG not set')
-
-config_file = os.environ['MONOBOX_AGGREGATOR_CONFIG']
-
-if not os.path.isfile(config_file):
-    raise RuntimeError('Cannot find file %s' % config_file)
-
-monobox_aggregator.server.init(config_file)
+monobox_aggregator.server.init(CONFIG_FILE)
 
 application = monobox_aggregator.server.app
