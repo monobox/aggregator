@@ -36,13 +36,15 @@ def main():
 
     return jsonify({'urls': urls})
 
-def run():
+def init(config_file=None):
     logging.basicConfig(level=logging.INFO)
     logger.info('Monobox aggregator server starting up')
 
-    config.init()
+    config.init(config_file)
     database.init(config.get('common', 'database_file'))
 
+def run():
+    init()
     app.run(host=config.get('server', 'listen_address'),
             port=config.getint('server', 'listen_port'))
 

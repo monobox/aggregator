@@ -19,34 +19,17 @@
 
 from __future__ import unicode_literals
 
-import sys
 import os
-import logging
-import argparse
-import ConfigParser
+import monobox_aggregator.server
 
+if not 'MONOBOX_AGGREGATOR_CONFIG' in os.environ:
+    raise RuntimeError('Environment variable MONOBOX_AGGREGATOR_CONFIG not set')
 
-logger = logging.getLogger(__name__)
-_inst = None
+config_file = os.environ['MONOBOX_AGGREGATOR_CONFIG']
 
-def init(config_file=None):
-    global _inst
+if not os.path.isfile(config_file):
+    raise RuntimeError('Cannot find file %s' % config_file)
 
-    if config_file is None:
-        parser = argparse.ArgumentParser(description='monobox aggregator')
-        parser.add_argument('config', help='configuration file')
+monobox_aggregator.server.init(config_file)
 
-        args = parser.parse_args()
-        config_file = args.config
-
-    if not os.path.isfile(config_file):
-        logging.error('Cannot file config file %s' % config_file)
-        sys.exit(1)
-    else:
-        logging.info('Loading config from %s' % config_file)
-    _inst = ConfigParser.ConfigParser()
-    _inst.read(config_file)
-
-    me = sys.modules[__name__]
-    for meth in ['get', 'getint', 'getfloat', 'getboolean']:
-        setattr(me, meth, getattr(_inst, meth))
+application = monobox_aggregator.server.app
