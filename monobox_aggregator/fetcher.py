@@ -19,6 +19,7 @@
 
 from __future__ import unicode_literals
 
+import sys
 import os
 import xml.dom.minidom
 import logging
@@ -28,6 +29,7 @@ import requests
 
 import database
 import config
+import utils
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +86,13 @@ def merge_sc_stations(url):
     logger.info('Fetched %d stations, %d total' % (len(stations),
             database.ShoutcastStation.select().count()))
 
+def purge_old_stations(timedelta):
+    threshold = datetime.datetime.now() - timedelta
+    q = database.ShoutcastStation.delete().where(database.ShoutcastStation.ts < threshold)
+    num_deleted = q.execute()
+
+    logger.info('Purged %d stations (timedelta=%s)' % (num_deleted, timedelta))
+
 def run():
     logging.basicConfig(level=logging.INFO)
     logger.info('Monobox fetcher starting up')
@@ -91,9 +100,22 @@ def run():
     config.init()
     database.init(config.get('common', 'database_file'))
 
+    max_age = config.get('fetcher', 'max_age')
+    if max_age:
+        timedelta = utils.str_to_timedelta(max_age)
+        if timedelta is None:
+            logger.error('Cannot convert configuration parameter '
+                    'max_age (%s) to timedelta' % max_age)
+            sys.exit(1)
+    else:
+        timedelta = None
+
     urls = config.get('fetcher', 'sc_urls').split(' ')
     for url in urls:
         merge_sc_stations(url)
+
+    if timedelta is not None:
+        purge_old_stations(timedelta)
 
 if __name__ == '__main__':
     run()
