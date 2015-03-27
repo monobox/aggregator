@@ -99,7 +99,7 @@ def purge_old_stations(timedelta):
     logger.info('Purged %d stations (timedelta=%s)' % (num_deleted, timedelta))
 
 def run():
-    logging.basicConfig(level=logging.INFO)
+    utils.init_logging()
     logger.info('Monobox fetcher starting up')
 
     config.init()

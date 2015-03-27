@@ -19,6 +19,7 @@
 
 from __future__ import unicode_literals
 
+import logging
 import re
 from datetime import timedelta
 
@@ -39,6 +40,15 @@ def str_to_timedelta(time_str):
             time_params[name] = int(param)
 
     return timedelta(**time_params)
+
+def init_logging():
+    mbl = logging.getLogger()
+    mbl.setLevel(logging.INFO)
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)-15s [%(levelname)-7s]: '
+                '%(message)s (%(filename)s:%(lineno)s)'))
+    mbl.addHandler(handler)
 
 if __name__ == '__main__':
     print parse_time('1h24m3s')

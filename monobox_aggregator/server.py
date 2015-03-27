@@ -25,6 +25,7 @@ from flask import Flask, render_template, jsonify, request
 import database
 import extractor
 import config
+import utils
 
 logger = logging.getLogger(__name__)
 app = Flask(__name__)
@@ -37,7 +38,7 @@ def main():
     return jsonify({'urls': urls})
 
 def init(config_file=None):
-    logging.basicConfig(level=logging.INFO)
+    utils.init_logger()
     logger.info('Monobox aggregator server starting up')
 
     config.init(config_file)
