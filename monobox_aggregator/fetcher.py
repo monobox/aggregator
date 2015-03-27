@@ -58,11 +58,12 @@ class ShoutcastProvider(object):
         else:
             return None
 
-def merge_sc_stations(url):
+def merge_sc_stations(url, listeners_min=0):
     logger.info('Merging shoutcast stations from URL %s' % url)
     sc = ShoutcastProvider()
 
     stations = sc.get_stations(url)
+    merged_count = 0
     for station in stations:
         try:
             old_entry = database.ShoutcastStation.select().where(
@@ -71,6 +72,9 @@ def merge_sc_stations(url):
             pass
         else:
             old_entry.delete_instance()
+
+        if int(station.getAttribute('lc')) < listeners_min:
+            continue
 
         station_dbinstance = database.ShoutcastStation.create(
             scid=station.getAttribute('id'),
@@ -82,9 +86,10 @@ def merge_sc_stations(url):
             ts=datetime.datetime.now())
 
         station_dbinstance.save()
+        merged_count += 1
 
-    logger.info('Fetched %d stations, %d total' % (len(stations),
-            database.ShoutcastStation.select().count()))
+    logger.info('Fetched %d stations, merged %d, %d total' % (len(stations),
+            merged_count, database.ShoutcastStation.select().count()))
 
 def purge_old_stations(timedelta):
     threshold = datetime.datetime.now() - timedelta
@@ -111,8 +116,9 @@ def run():
         timedelta = None
 
     urls = config.get('fetcher', 'sc_urls').split(' ')
+    listeners_min = config.getint('fetcher', 'listeners_min')
     for url in urls:
-        merge_sc_stations(url)
+        merge_sc_stations(url, listeners_min)
 
     if timedelta is not None:
         purge_old_stations(timedelta)
