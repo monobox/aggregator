@@ -35,7 +35,7 @@ SC_RANDOM_URL='http://api.shoutcast.com/station/randomstations'
 
 class ShoutcastProvider(object):
     def __init__(self):
-        sc_file = config.get('aggregator', 'shoutcast_keyfile')
+        sc_file = config.get('fetcher', 'shoutcast_keyfile')
         if not os.path.isfile(sc_file):
             raise RuntimeError('ERROR: SC key file %s not found' % sc_file)
         self.sc_key = open(sc_file).read().strip()
@@ -57,7 +57,7 @@ def run():
     logger.info('Monobox fetcher starting up')
 
     config.init()
-    database.init(config.get('aggregator', 'database_file'))
+    database.init(config.get('common', 'database_file'))
 
     sc = ShoutcastProvider()
 
@@ -82,7 +82,7 @@ def run():
 
         station_dbinstance.save()
 
-    logger.info('Fetched %d stations into %d total' % (len(stations),
+    logger.info('Fetched %d stations, %d total' % (len(stations),
             database.ShoutcastStation.select().count()))
 
 if __name__ == '__main__':

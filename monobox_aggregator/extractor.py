@@ -33,4 +33,4 @@ def get_urls():
 
     random.shuffle(urls)
 
-    return urls[0:config.getint('aggregator', 'urls_per_request')]
+    return urls[0:config.getint('server', 'urls_per_request')]

@@ -41,10 +41,10 @@ def run():
     logger.info('Monobox aggregator server starting up')
 
     config.init()
-    database.init(config.get('aggregator', 'database_file'))
+    database.init(config.get('common', 'database_file'))
 
-    app.run(host=config.get('aggregator', 'listen_address'),
-            port=config.getint('aggregator', 'listen_port'))
+    app.run(host=config.get('server', 'listen_address'),
+            port=config.getint('server', 'listen_port'))
 
 if __name__ == '__main__':
     run()
