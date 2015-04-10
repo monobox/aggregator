@@ -33,7 +33,7 @@ app = Flask(__name__)
 
 @app.route('/random')
 def main():
-    urls = extractor.get_urls()
+    urls = extractor.get_random_urls()
 
     return jsonify({'urls': urls})
 

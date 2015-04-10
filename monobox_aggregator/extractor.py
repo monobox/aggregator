@@ -26,7 +26,7 @@ import config
 
 SC_TUNE_URL='http://yp.shoutcast.com/sbin/tunein-station.pls'
 
-def get_urls():
+def get_random_urls():
     urls = []
     for station in database.ShoutcastStation.select():
         urls.append('%s?id=%s' % (SC_TUNE_URL, station.scid))
