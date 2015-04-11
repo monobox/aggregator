@@ -30,12 +30,23 @@ import utils
 logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return jsonify({'error_code': 404, 'error_string': 'resource not found'})
 
-@app.route('/random')
-def main():
+@app.route('/')
+def root():
+    return ''
+
+@app.route('/register', methods=['POST'])
+def register():
+    return jsonify({'error_code': 0, 'error_string': '', 'session_id': '1234567890'})
+
+@app.route('/stations')
+def stations():
     urls = extractor.get_random_urls()
 
-    return jsonify({'urls': urls})
+    return jsonify({'error_code': 0, 'error_string': '', 'urls': urls})
 
 def init(config_file=None):
     utils.init_logging()
