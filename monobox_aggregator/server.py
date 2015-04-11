@@ -19,8 +19,7 @@
 
 import argparse
 import logging
-import cgi
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, request
 
 import database
 import extractor
@@ -44,6 +43,9 @@ def register():
 
 @app.route('/stations')
 def stations():
+    if not 'session_id' in request.values:
+        return jsonify({'error_code': 100, 'error_string': 'missing session_id parameter'})
+    
     urls = extractor.get_random_urls()
 
     return jsonify({'error_code': 0, 'error_string': '', 'urls': urls})
