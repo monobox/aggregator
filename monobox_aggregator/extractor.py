@@ -19,18 +19,17 @@
 
 from __future__ import unicode_literals
 
-import random
-
 import database
 import config
 
 SC_TUNE_URL='http://yp.shoutcast.com/sbin/tunein-station.pls'
 
-def get_random_urls():
+def get_random_sc_urls():
     urls = []
     for station in database.ShoutcastStation.select():
         urls.append('%s?id=%s' % (SC_TUNE_URL, station.scid))
 
-    random.shuffle(urls)
-
     return urls[0:config.getint('server', 'urls_per_request')]
+
+def get_loved_urls(auth_code):
+    return [station.url for station in database.LovedStation.select().where(auth_code==auth_code)]

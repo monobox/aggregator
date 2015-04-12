@@ -17,8 +17,10 @@
 #
 # Copyright (c) 2015 by OXullo Intersecans / bRAiNRAPERS
 
-import argparse
 import logging
+import random
+import datetime
+import uuid
 from flask import Flask, jsonify, request
 
 import database
@@ -39,14 +41,45 @@ def root():
 
 @app.route('/register', methods=['POST'])
 def register():
-    return jsonify({'error_code': 0, 'error_string': '', 'session_id': '1234567890'})
+    if not 'auth_code' in request.values:
+        return jsonify({'error_code': 100, 'error_string': 'missing auth_code parameter'})
+
+    auth_code = request.values['auth_code']
+    try:
+        database.RegisteredBox.get(database.RegisteredBox.auth_code==auth_code)
+    except database.RegisteredBox.DoesNotExist:
+        return jsonify({'error_code': 200, 'error_string': 'unregistered auth_code'})
+
+    try:
+        session = database.Session.get(database.Session.auth_code==auth_code)
+        session.ts = datetime.datetime.now()
+        session.save()
+        logger.info('Refreshed session %s (auth_code: %s)' % (session.session_id, session.auth_code))
+    except database.Session.DoesNotExist:
+        session = database.Session.create(auth_code=auth_code, session_id=uuid.uuid4(), ts=datetime.datetime.now())
+        session.save()
+        logger.info('Created new session %s (auth_code: %s)' % (session.session_id, session.auth_code))
+
+    return jsonify({'error_code': 0, 'error_string': '', 'session_id': session.session_id})
 
 @app.route('/stations')
 def stations():
     if not 'session_id' in request.values:
-        return jsonify({'error_code': 100, 'error_string': 'missing session_id parameter'})
-    
-    urls = extractor.get_random_urls()
+        return jsonify({'error_code': 300, 'error_string': 'missing session_id parameter'})
+
+    try:
+        session = database.Session.get(database.Session.session_id==request.values['session_id'])
+    except database.Session.DoesNotExist:
+        return jsonify({'error_code': 400, 'error_string': 'expired or non-existent session'})
+
+    urls = extractor.get_random_sc_urls()
+    loved_urls = extractor.get_loved_urls(session.auth_code)
+
+    logger.info('Merging %d loved urls among %d SC stations' % (len(loved_urls), len(urls)))
+
+    urls += loved_urls
+
+    random.shuffle(urls)
 
     return jsonify({'error_code': 0, 'error_string': '', 'urls': urls})
 

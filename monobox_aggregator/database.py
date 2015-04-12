@@ -39,13 +39,32 @@ class ShoutcastStation(peewee.Model):
     class Meta:
         database = db
 
+class LovedStation(peewee.Model):
+    auth_code = peewee.TextField()
+    url = peewee.TextField()
+
+    class Meta:
+        database = db
+
+class Session(peewee.Model):
+    auth_code = peewee.TextField()
+    session_id = peewee.TextField()
+    ts = peewee.DateTimeField()
+
+    class Meta:
+        database = db
+
+class RegisteredBox(peewee.Model):
+    auth_code = peewee.TextField()
+
+    class Meta:
+        database = db
+
 def init(filename):
     logger.info('Opening db %s' % filename)
     db.init(filename)
-    db.create_tables([ShoutcastStation], safe=True)
+    db.create_tables([ShoutcastStation, LovedStation, Session, RegisteredBox], safe=True)
 
 if __name__ == '__main__':
-    db = FileDatabase('db.json')
-    print db['testkey']
-    db['testkey'] = 1
-    db.commit()
+    logging.basicConfig(level=logging.DEBUG)
+    init('/tmp/test.db')
