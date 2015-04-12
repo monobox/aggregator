@@ -88,7 +88,7 @@ def init(config_file=None):
     logger.info('Monobox aggregator server starting up')
 
     config.init(config_file)
-    database.init(config.get('common', 'database_file'))
+    database.init(config.get('common', 'database_uri'))
 
 def run():
     init()

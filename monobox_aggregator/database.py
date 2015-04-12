@@ -21,13 +21,18 @@ from __future__ import unicode_literals
 
 import os
 import peewee
+import playhouse.db_url
 import logging
 
 logger = logging.getLogger(__name__)
 
-db = peewee.SqliteDatabase(None)
+db = peewee.Proxy()
 
-class ShoutcastStation(peewee.Model):
+class BaseModel(peewee.Model):
+    class Meta:
+        database = db
+
+class ShoutcastStation(BaseModel):
     scid = peewee.IntegerField(unique=True)
     name = peewee.TextField()
     lc = peewee.IntegerField()
@@ -36,35 +41,25 @@ class ShoutcastStation(peewee.Model):
     genre = peewee.TextField()
     ts = peewee.DateTimeField()
 
-    class Meta:
-        database = db
-
-class LovedStation(peewee.Model):
+class LovedStation(BaseModel):
     auth_code = peewee.TextField()
     url = peewee.TextField()
 
-    class Meta:
-        database = db
-
-class Session(peewee.Model):
+class Session(BaseModel):
     auth_code = peewee.TextField()
     session_id = peewee.TextField()
     ts = peewee.DateTimeField()
 
-    class Meta:
-        database = db
-
-class RegisteredBox(peewee.Model):
+class RegisteredBox(BaseModel):
     auth_code = peewee.TextField()
 
-    class Meta:
-        database = db
 
-def init(filename):
-    logger.info('Opening db %s' % filename)
-    db.init(filename)
+def init(uri):
+    logger.info('Opening db at %s' % uri)
+    db_connection = playhouse.db_url.connect(uri)
+    db.initialize(db_connection)
     db.create_tables([ShoutcastStation, LovedStation, Session, RegisteredBox], safe=True)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    init('/tmp/test.db')
+    init('sqlite://test.db')

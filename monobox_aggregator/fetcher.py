@@ -103,7 +103,7 @@ def run():
     logger.info('Monobox fetcher starting up')
 
     config.init()
-    database.init(config.get('common', 'database_file'))
+    database.init(config.get('common', 'database_uri'))
 
     max_age = config.get('fetcher', 'max_age')
     if max_age:
